@@ -8,6 +8,15 @@ import java.util.List;
 import java.util.Scanner;
 
 public class MemberDAO {
+    public String getCurrentID() {
+        return currentID;
+    }
+
+    public void setCurrentID(String currentID) {
+        this.currentID = currentID;
+    }
+
+    private String currentID;
     Connection conn = null; // 자바와 오라클에 대한 연결 설정
     Statement stmt = null; // sql문을 수행하기 위한 객체
     ResultSet rs = null;  // statement 동작에 대한 결과로 전달되는 db의 내용
@@ -55,16 +64,48 @@ public class MemberDAO {
             while(rs.next()) {
                 if(id.equals(rs.getString("ID"))){
                     if(pwd.equals(rs.getString("PWD"))){
-                        return "성공";
+                            return id;
                     }
                 }
             }
-            Common.close(rs); // 연결의 역순 해제
+            Common.close(rs);
             Common.close(stmt);
             Common.close(conn);
         }catch (Exception e){
             e.printStackTrace();
         }
         return "실패";
+    }
+
+    public void userInfoInsert() {
+        System.out.println("회원가입 정보를 입력해주세요.");
+        System.out.print("아이디 : ");
+        String id = sc.next();
+        System.out.print("비밀번호 : ");
+        int pwd = sc.nextInt();
+        System.out.print("이메일 : ");
+        String email = sc.next();
+        System.out.print("닉네임 : ");
+        String nickName = sc.next();
+        System.out.print("생년월일 : ");
+        String birthDay = sc.next();
+        System.out.print("전화번호 : ");
+        int phNumber = sc.nextInt();
+
+        String sql = "INSERT INTO USER_INFO (ID, PWD, EMAIL, NICKNAME, BIRTH_DAY, PH_NUMBER, GOLD, BUY_GOLD, RANK) VALUES ("
+                + "'" + id + "'" + "," + "'" + pwd + "'" + "," + "'" + email + "'" + "," + "'" + nickName + "'" + ","
+                + "'" + birthDay + "'" + "," + phNumber + ", '','','')";
+
+        try {
+            conn = Common.getConnection();
+            stmt = conn.createStatement();
+            int ret = stmt.executeUpdate(sql);
+            System.out.println("Return : " + ret);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Common.close(stmt);
+        Common.close(conn);
     }
 }

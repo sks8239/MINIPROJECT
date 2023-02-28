@@ -1,9 +1,12 @@
 package jdbc.dao;
 
+import jdbc.JdbcMain;
 import jdbc.util.Common;
 import jdbc.vo.LoLChamVO;
+import jdbc.vo.MemberVO;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -13,8 +16,9 @@ import java.util.Scanner;
 public class LoLChamDAO {
     Connection conn = null; // 자바와 오라클에 대한 연결 설정
     Statement stmt = null; // SQL 문을 수행하기 위한 객체
+    PreparedStatement pstmt = null;
     ResultSet rs = null; // statement 동작에 대한 결과로 전달되는 DB의 내용
-    ResultSet rs2 = null;
+
     Scanner sc = new Scanner(System.in);
     public List<LoLChamVO> LoLChamSelect() {
         List<LoLChamVO> list = new ArrayList<>(); // 반환한 리스트를 위해 리스트 객체 생성
@@ -23,6 +27,7 @@ public class LoLChamDAO {
             stmt = conn.createStatement(); // stmt 에 쿼리문을 담아서 가져옴
             String sql = "SELECT * FROM CHAMPION";
             rs = stmt.executeQuery(sql); // rs에 쿼리문의 값이 담김, select 문과 같이 여러개의 레코드(행)로 결과가 반환될 때 사용
+
             while (rs.next()) { // 읽을 행이 있으면 참
                 String chp_name = rs.getString("CHP_NAME");
                 int chp_price = rs.getInt("CHP_PRICE");
@@ -51,22 +56,55 @@ public class LoLChamDAO {
     }
 
     public void LoLChamInsert() {
+        List<LoLChamVO> list2 = new ArrayList<>();
+        System.out.println("=================================");
         System.out.println("구매하실 챔피언 이름을 입력해 주세요 : ");
         String ChamBuyName = sc.next();
-        String sql = "INSERT INTO CHAMPION_BUY SELECT * FROM CHAMPION WHERE CHP_NAME = " + "'"+ ChamBuyName + "'";
-        System.out.println(ChamBuyName+"을 구입 완료 했습니다.");
-
         try {
-            conn =  Common.getConnection();
-            stmt = conn.createStatement();
-            int ret = stmt.executeUpdate(sql); // 영향을 받는 값이 1개이므로 1이 들어온다.
-            System.out.println("Return : " + ret);
+            conn = Common.getConnection(); // 연결을 가져옴
+            stmt = conn.createStatement(); // stmt 에 쿼리문을 담아서 가져옴
+            String buy_sql = "SELECT * FROM CHAMPION WHERE CHP_NAME = '" + ChamBuyName + "'";
+            rs = stmt.executeQuery(buy_sql); // rs에 쿼리문의 값이 담김, select 문과 같이 여러개의 레코드(행)로 결과가 반환될 때 사용
+
+            while (rs.next()) { // 읽을 행이 있으면 참
+                String chp_nameb = rs.getString("CHP_NAME");
+                int chp_priceb = rs.getInt("CHP_PRICE");
+                String positionb = rs.getString("POSITION");
+                String laneb = rs.getString(("LANE"));
+                LoLChamVO vo1 = new LoLChamVO(chp_nameb, chp_priceb, positionb, laneb); // 하나의 행(레코드)에 대한 정보 저장을 위한 객체 생성
+                list2.add(vo1); // 리스트에 추가
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+        JdbcMain main = new JdbcMain();
+        String currentID = main.login();
+        String sql = "INSERT INTO CHAMPION_BUY(CHPNO,ID,CHP_NAME,CHP_PRICE,POSITION,LANE) VALUES(SEQ_CHPSEQ.NEXTVAL,?,?,?,?,?)";
+        try {
+            conn = Common.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            for(LoLChamVO e: list2){
+                pstmt.setString(1, currentID);
+                pstmt.setString(2, e.getChp_name());
+                pstmt.setInt(3, e.getChp_price());
+                pstmt.setString(4, e.getPosition());
+                pstmt.setString(5, e.getLane());
+            }
+
+            pstmt.executeUpdate();
+            System.out.println(ChamBuyName + "을 구입 완료 했습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Common.close(rs);
         Common.close(stmt);
         Common.close(conn);
+        Common.close(pstmt);
+
     }
+
 
 
 }

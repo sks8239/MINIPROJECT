@@ -1,5 +1,6 @@
 package jdbc.dao;
 
+import jdbc.JdbcMain;
 import jdbc.util.Common;
 import jdbc.vo.LoLSkinVO;
 
@@ -11,10 +12,10 @@ import java.util.List;
 import java.util.Scanner;
 
 public class LoLSkinDAO {
+    Scanner sc = new Scanner(System.in);
     Connection conn = null; // 자바와 오라클에 대한 연결 설정
     Statement stmt = null; // SQL 문을 수행하기 위한 객체
     ResultSet rs = null; // statement 동작에 대한 결과로 전달되는 DB의 내용
-    Scanner sc = new Scanner(System.in);
     public List<LoLSkinVO> LoLSkinSelect() {
         List<LoLSkinVO> list = new ArrayList<>(); // 반환한 리스트를 위해 리스트 객체 생성
         try {
@@ -41,6 +42,7 @@ public class LoLSkinDAO {
             System.out.println("챔피언 이름 : " + e.getChp_name());
             System.out.println("---------------------------------");
         }
+
     }
 
     public List<LoLSkinVO> LoLSkinBuySelect() {
@@ -74,13 +76,14 @@ public class LoLSkinDAO {
             System.out.println("스킨 가격 : " + e.getSk_price());
             System.out.println("---------------------------------");
         }
+        JdbcMain jdbcmain = new JdbcMain();
     }
+
 
     public void LoLSkinInsert() {
         System.out.println("구매하실 스킨 이름을 입력해 주세요 : ");
-        sc.nextLine();
         String SkinBuyName = sc.nextLine();
-        String sql = "UPDATE USER_INFO SET BUY_SKIN+SkinBuyName WHERE SkinBuyName NOT IN BUY_SKIN";
+        String sql = "INSERT INTO SKIN_BUY SELECT * FROM SKIN WHERE SK_NAME = " + "'"+ SkinBuyName + "'";
         System.out.println(SkinBuyName+"을 구입 완료 했습니다.");
 
         try {
