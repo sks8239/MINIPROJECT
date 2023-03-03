@@ -1,11 +1,13 @@
 package jdbc.dao;
 
 import jdbc.util.Common;
+import jdbc.vo.LoLChamVO;
 import jdbc.vo.MemberVO;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.sql.PreparedStatement;
 
 public class MemberDAO {
     public String getCurrentID() {
@@ -16,21 +18,22 @@ public class MemberDAO {
         this.currentID = currentID;
     }
 
-    private String currentID;
+    private String currentID = "";
+    PreparedStatement pstmt = null;
     Connection conn = null; // 자바와 오라클에 대한 연결 설정
     Statement stmt = null; // sql문을 수행하기 위한 객체
     ResultSet rs = null;  // statement 동작에 대한 결과로 전달되는 db의 내용
     Scanner sc = new Scanner(System.in);
 
-    public List<MemberVO> memberSelect(){
+    public List<MemberVO> memberSelect() {
         List<MemberVO> list = new ArrayList<>(); // 반환할 리스트를 위해 객체 생성
-        try{
+        try {
             conn = Common.getConnection();
             stmt = conn.createStatement();
             String sql = "SELECT * FROM USER_INFO";
             rs = stmt.executeQuery(sql); // select 문과 같이 여러개의 레코드(행)으로 결과가 반환될 때 사용
 
-            while(rs.next()){ // 읽을 행이 있으면 참
+            while (rs.next()) { // 읽을 행이 있으면 참
                 String id = rs.getString("ID");
                 String pwd = rs.getString("PWD");
                 String email = rs.getString("EMAIL");
@@ -40,7 +43,7 @@ public class MemberDAO {
                 int gold = rs.getInt("GOLD");
                 int buyGold = rs.getInt("BUY_GOLD");
                 String rank = rs.getString("RANK");
-                MemberVO vo = new MemberVO(id,pwd,email,nickName,birthDay,PhNumber,gold,buyGold,rank); // 하나의 행(레코드)에 대한 정보 저장을 위한 객체 생성
+                MemberVO vo = new MemberVO(id, pwd, email, nickName, birthDay, PhNumber, gold, buyGold, rank); // 하나의 행(레코드)에 대한 정보 저장을 위한 객체 생성
                 list.add(vo);
             }
             Common.close(rs); // 연결의 역순 해제
@@ -51,6 +54,7 @@ public class MemberDAO {
         }
         return list;
     }
+
     public String lolLogin(List<MemberVO> list) {
         try {
             conn = Common.getConnection();
@@ -61,23 +65,23 @@ public class MemberDAO {
             String id = sc.next();
             System.out.print("비밀번호를 입력하세요 : ");
             String pwd = sc.next();
-            while(rs.next()) {
-                if(id.equals(rs.getString("ID"))){
-                    if(pwd.equals(rs.getString("PWD"))){
-                            return id;
+            while (rs.next()) {
+                if (id.equals(rs.getString("ID"))) {
+                    if (pwd.equals(rs.getString("PWD"))) {
+                        return id;
                     }
                 }
             }
             Common.close(rs);
             Common.close(stmt);
             Common.close(conn);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return "실패";
     }
 
-    public void userInfoInsert() {
+    public String userInfoInsert() {
         System.out.println("회원가입 정보를 입력해주세요.");
         System.out.print("아이디 : ");
         String id = sc.next();
@@ -91,21 +95,42 @@ public class MemberDAO {
         String birthDay = sc.next();
         System.out.print("전화번호 : ");
         int phNumber = sc.nextInt();
-
         String sql = "INSERT INTO USER_INFO (ID, PWD, EMAIL, NICKNAME, BIRTH_DAY, PH_NUMBER, GOLD, BUY_GOLD, RANK) VALUES ("
                 + "'" + id + "'" + "," + "'" + pwd + "'" + "," + "'" + email + "'" + "," + "'" + nickName + "'" + ","
                 + "'" + birthDay + "'" + "," + phNumber + ", '','','')";
+
 
         try {
             conn = Common.getConnection();
             stmt = conn.createStatement();
             int ret = stmt.executeUpdate(sql);
-            System.out.println("Return : " + ret);
+            currentID = id;
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String [] basicChampion = {"가렌","라이즈","블리츠크랭크","아무무","애쉬"};
+
+        String sql2 = "INSERT INTO CHAMPION_BUY(CHPNO,ID,CHP_NAME,CHP_PRICE,POSITION,LANE)" +
+                "VALUES(S_SKSEQ.NEXTVAL,currentID," +
+                "(SELECT CHP_NAME,CHP_PRICE,POSITION,LANE" +
+                "FROM CHAMPION WHERE CHP_NAME = '" + basicChampion[0]+ "'" +
+                "OR CHP_NAME = '" + basicChampion[1] + "'" +
+                "OR CHP_NAME = '" + basicChampion[2] + "'" +
+                "OR CHP_NAME = '" + basicChampion[3] + "'" +
+                "OR CHP_NAME = '" + basicChampion[4] + "'" + ")" +")";
+
+
+
+        try {
+            conn = Common.getConnection();
+            pstmt = conn.prepareStatement(sql2);
+            pstmt.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
         }
         Common.close(stmt);
         Common.close(conn);
+        return id;
     }
 }
